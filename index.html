@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediTrack - Prescription Tracking System</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 font-[Inter]">
+    <div id="app" class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <i class="bi bi-capsule text-teal-600 text-3xl"></i>
+                        <span class="ml-2 text-xl font-semibold text-gray-800">MediTrack</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button @click="activeTab = 'dashboard'" :class="{'text-teal-600': activeTab === 'dashboard'}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100">Dashboard</button>
+                        <button @click="activeTab = 'prescriptions'" :class="{'text-teal-600': activeTab === 'prescriptions'}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100">Prescriptions</button>
+                        <button @click="activeTab = 'reminders'" :class="{'text-teal-600': activeTab === 'reminders'}" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100">Reminders</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Dashboard -->
+            <div v-if="activeTab === 'dashboard'" class="space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">Welcome to MediTrack</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="font-semibold text-lg mb-2">Active Prescriptions</h3>
+                        <p class="text-3xl text-teal-600">{{ activePrescriptions }}</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="font-semibold text-lg mb-2">Today's Medications</h3>
+                        <p class="text-3xl text-teal-600">{{ todayMedications }}</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="font-semibold text-lg mb-2">Upcoming Reminders</h3>
+                        <p class="text-3xl text-teal-600">{{ upcomingReminders }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prescriptions -->
+            <div v-if="activeTab === 'prescriptions'" class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">Prescriptions</h2>
+                    <button @click="showAddModal = true" class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700">
+                        Add Prescription
+                    </button>
+                </div>
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="prescription in prescriptions" :key="prescription.id">
+                                <td class="px-6 py-4 whitespace-nowrap">{{ prescription.medication }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ prescription.schedule }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="{'bg-green-100 text-green-800': prescription.status === 'Active', 'bg-red-100 text-red-800': prescription.status === 'Inactive'}" 
+                                          class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                                        {{ prescription.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap space-x-2">
+                                    <button @click="editPrescription(prescription)" class="text-teal-600 hover:text-teal-900">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button @click="deletePrescription(prescription.id)" class="text-red-600 hover:text-red-900">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reminders -->
+            <div v-if="activeTab === 'reminders'" class="space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">Medication Reminders</h2>
+                <div class="bg-white shadow-md rounded-lg p-6">
+                    <div class="space-y-4">
+                        <div v-for="reminder in reminders" :key="reminder.id" 
+                             class="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                                <h3 class="font-semibold">{{ reminder.medication }}</h3>
+                                <p class="text-sm text-gray-600">{{ reminder.time }}</p>
+                            </div>
+                            <div class="space-x-2">
+                                <button @click="markComplete(reminder.id)" class="text-green-600 hover:text-green-900">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                                <button @click="snoozeReminder(reminder.id)" class="text-blue-600 hover:text-blue-900">
+                                    <i class="bi bi-clock"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Add/Edit Prescription Modal -->
+        <div v-if="showAddModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">
+                        {{ editingPrescription ? 'Edit Prescription' : 'Add New Prescription' }}
+                    </h3>
+                    <form @submit.prevent="savePrescription" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Medication Name</label>
+                            <input v-model="prescriptionForm.medication" type="text" required
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Schedule</label>
+                            <input v-model="prescriptionForm.schedule" type="text" required
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Email for Notifications</label>
+                            <input v-model="prescriptionForm.email" type="email" required
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" @click="showAddModal = false"
+                                    class="bg-gray-200 px-4 py-2 rounded-md hover:bg-gray-300">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700">
+                                Save
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                return {
+                    activeTab: 'dashboard',
+                    showAddModal: false,
+                    editingPrescription: null,
+                    activePrescriptions: 5,
+                    todayMedications: 3,
+                    upcomingReminders: 2,
+                    prescriptionForm: {
+                        medication: '',
+                        schedule: '',
+                        email: ''
+                    },
+                    prescriptions: [
+                        { id: 1, medication: 'Amoxicillin', schedule: '3 times daily', status: 'Active' },
+                        { id: 2, medication: 'Ibuprofen', schedule: 'Every 6 hours', status: 'Active' },
+                    ],
+                    reminders: [
+                        { id: 1, medication: 'Amoxicillin', time: '2:00 PM' },
+                        { id: 2, medication: 'Ibuprofen', time: '4:00 PM' },
+                    ]
+                }
+            },
+            methods: {
+                editPrescription(prescription) {
+                    this.editingPrescription = prescription;
+                    this.prescriptionForm = { ...prescription };
+                    this.showAddModal = true;
+                },
+                savePrescription() {
+                    if (this.editingPrescription) {
+                        const index = this.prescriptions.findIndex(p => p.id === this.editingPrescription.id);
+                        this.prescriptions[index] = { ...this.prescriptionForm, id: this.editingPrescription.id };
+                    } else {
+                        this.prescriptions.push({
+                            id: this.prescriptions.length + 1,
+                            ...this.prescriptionForm,
+                            status: 'Active'
+                        });
+                    }
+                    this.showAddModal = false;
+                    this.editingPrescription = null;
+                    this.prescriptionForm = { medication: '', schedule: '', email: '' };
+                },
+                deletePrescription(id) {
+                    if (confirm('Are you sure you want to delete this prescription?')) {
+                        this.prescriptions = this.prescriptions.filter(p => p.id !== id);
+                    }
+                },
+                markComplete(id) {
+                    this.reminders = this.reminders.filter(r => r.id !== id);
+                },
+                snoozeReminder(id) {
+                    const reminder = this.reminders.find(r => r.id === id);
+                    if (reminder) {
+                        reminder.time = '30 minutes later';
+                    }
+                }
+            }
+        }).mount('#app')
+    </script>
+
+    <style>
+        input {
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem;
+        }
+    </style>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
